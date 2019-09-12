@@ -1,0 +1,76 @@
+
+ - hosts: webservers
+   remote_user: ec2-user
+   become: yes
+   gather_facts: no
+   vars:
+     tomcat_ver: 9.0.22
+     tomcat_url: http://apache.mirror.rafal.ca/tomcat/tomcat-9/v{{tomcat_ver}}/bin/apache-tomcat-{{tomcat_ver}}.tar.gz
+     tomcat_dest: /tmp/apache-tomcat-{{tomcat_ver}}.tar.gz
+
+   pre_tasks:
+     - name: install python
+       raw: 'sudo yum -y install python36'
+
+   tasks:
+     - name: install basic packages
+       package:
+         name: ['vim', 'tmux', 'tree', 'wget', 'unzip', 'curl', 'git']
+         state: present
+
+     - name: install java 8
+       yum:
+         name: java-1.8.0-openjdk
+         state: present
+
+     - name: create tomcat group
+       group:
+         name: tomcat
+
+     - name: create tomcat user
+       user:
+         name: tomcat
+         group: tomcat
+         home: /usr/share/tomcat
+         createhome: no
+         system: yes
+
+     - name: download tomcat
+       get_url:
+         url: "{{tomcat_url}}"
+         dest: "{{tomcat_dest}}"
+
+     - name: create tomcat directory
+       file:
+         path: /usr/share/tomcat
+         state: directory
+         owner: tomcat
+         group: tomcat
+
+     - name: extract tomcat
+       unarchive:
+         src: "{{tomcat_dest}}"
+         dest: /usr/share/tomcat
+         owner: tomcat
+         group: tomcat
+         remote_src: yes
+         extra_opts: "--strip-components=1"
+         creates: /usr/share/tomcat/bin
+
+     - name: copy tomcat service
+       template:
+         src: tomcat.server.j2
+         dest: /etc/systemd/system/tomcat.service
+
+     - name: start tomcat service
+       service:
+         daemon_reload: yes
+         name: tomcat
+         state: started
+         enabled: yes
+
+
+
+
+
+
