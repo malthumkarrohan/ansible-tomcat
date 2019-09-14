@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('ansible tomcat') {
             steps {
-                sh 'ansible-playbook tomcat.yml' 
+                sh 'ansible-playbook tomcat.yml -i hosts' 
             }
         }
     }
